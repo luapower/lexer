@@ -45,7 +45,7 @@ local action = action_def + transition
 -- Operators.
 local operator = token(l.OPERATOR, S(',|&-.<:>*?+!^();'))
 
-local cpp = require 'cpp'
+local cpp = require 'lexers.cpp'
 
 function LoadTokens()
   cpp.LoadTokens()
