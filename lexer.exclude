@@ -18,3 +18,5 @@
 !/lexer*
 !/lexers/
 !/lexers/**
+!/csrc/lexer/
+!/csrc/lexer/**
