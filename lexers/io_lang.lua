@@ -1,10 +1,11 @@
--- Copyright 2006-2013 Mitchell mitchell.att.foicica.com. See LICENSE.
+-- Copyright 2006-2014 Mitchell mitchell.att.foicica.com. See LICENSE.
 -- Io LPeg lexer.
 
-local l, token, word_match = lexer, lexer.token, lexer.word_match
+local l = require('lexer')
+local token, word_match = l.token, l.word_match
 local P, R, S = lpeg.P, lpeg.R, lpeg.S
 
-local M = {_NAME = 'Io'}
+local M = {_NAME = 'io_lang'}
 
 -- Whitespace.
 local ws = token(l.WHITESPACE, l.space^1)

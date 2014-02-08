@@ -15,6 +15,6 @@
 !/csrc/
 !/media/
 
-!/lexers*
+!/lexer*
 !/lexers/
 !/lexers/**

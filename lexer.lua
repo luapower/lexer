@@ -70,7 +70,7 @@ local M = {}
 --
 --     -- ? LPeg lexer.
 --
---     local l = require('lexer')
+--     local l = require('lexers.lexer')
 --     local token, word_match = l.token, l.word_match
 --     local P, R, S = lpeg.P, lpeg.R, lpeg.S
 --
@@ -846,7 +846,7 @@ local M = {}
 --   found.
 -- @field style_at (table, Read-only)
 --   Table of style names at positions in the buffer starting from zero.
-module('lexer')]=]
+module('lexers.lexer')]=]
 
 local lpeg = require('lpeg')
 local lpeg_P, lpeg_R, lpeg_S, lpeg_V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
@@ -859,7 +859,7 @@ M.LEXERPATH = package.path
 local lexers = {}
 
 -- Keep track of the last parent lexer loaded. This lexer's rules are used for
--- proxy lexers (those that load parent and child lexers to embed) that do not 
+-- proxy lexers (those that load parent and child lexers to embed) that do not
 -- declare a parent lexer.
 local parent_lexer
 
@@ -1007,7 +1007,7 @@ function M.load(name, alt_name)
 
   -- Load the language lexer with its rules, styles, etc.
   M.WHITESPACE = (alt_name or name)..'_whitespace'
-  local lexer_file, error = package.searchpath(name, M.LEXERPATH)
+  local lexer_file, error = package.searchpath('lexers.' .. name, M.LEXERPATH)
   local ok, lexer = pcall(dofile, lexer_file or '')
   if not ok then
     _G.print(error or lexer) -- error message
