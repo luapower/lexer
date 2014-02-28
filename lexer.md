@@ -3,10 +3,8 @@ project: lexer
 tagline: scintillua lexer
 ---
 
-This is scintillua 3.3.9-1 from http://foicica.com/scintillua/download (MIT license)
-
 > __NOTE:__ What follows is an experiment in integrating documentation from external projects into luapower. \
-> Check out the [original document][lexer doc].
+> Check out the [original documentation of the lexer module][lexer doc].
 
 ## `local lexer = require'lexer'`
 
