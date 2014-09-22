@@ -70,7 +70,7 @@ local M = {}
 --
 --     -- ? LPeg lexer.
 --
---     local l = require('lexers.lexer')
+--     local l = require('lexer')
 --     local token, word_match = l.token, l.word_match
 --     local P, R, S = lpeg.P, lpeg.R, lpeg.S
 --
@@ -121,7 +121,7 @@ local M = {}
 --
 -- In a lexer, tokens consist of a token name and an LPeg pattern that matches a
 -- sequence of characters recognized as an instance of that token. Create tokens
--- using the [`token()`](#token) function. Let us examine the "whitespace" token
+-- using the [`lexer.token()`]() function. Let us examine the "whitespace" token
 -- defined in the template shown earlier:
 --
 --     local ws = token(l.WHITESPACE, l.space^1)
@@ -134,20 +134,19 @@ local M = {}
 --
 -- The `lexer` (`l`) module actually provides a convenient list of common token
 -- names and common LPeg patterns for you to use. Token names include
--- [`DEFAULT`](#DEFAULT), [`WHITESPACE`](#WHITESPACE), [`COMMENT`](#COMMENT),
--- [`STRING`](#STRING), [`NUMBER`](#NUMBER), [`KEYWORD`](#KEYWORD),
--- [`IDENTIFIER`](#IDENTIFIER), [`OPERATOR`](#OPERATOR), [`ERROR`](#ERROR),
--- [`PREPROCESSOR`](#PREPROCESSOR), [`CONSTANT`](#CONSTANT),
--- [`VARIABLE`](#VARIABLE), [`FUNCTION`](#FUNCTION), [`CLASS`](#CLASS),
--- [`TYPE`](#TYPE), [`LABEL`](#LABEL), [`REGEX`](#REGEX), and
--- [`EMBEDDED`](#EMBEDDED). Patterns include [`any`](#any), [`ascii`](#ascii),
--- [`extend`](#extend), [`alpha`](#alpha), [`digit`](#digit), [`alnum`](#alnum),
--- [`lower`](#lower), [`upper`](#upper), [`xdigit`](#xdigit), [`cntrl`](#cntrl),
--- [`graph`](#graph), [`print`](#print), [`punct`](#punct), [`space`](#space),
--- [`newline`](#newline), [`nonnewline`](#nonnewline),
--- [`nonnewline_esc`](#nonnewline_esc), [`dec_num`](#dec_num),
--- [`hex_num`](#hex_num), [`oct_num`](#oct_num), [`integer`](#integer),
--- [`float`](#float), and [`word`](#word). You may use your own token names if
+-- [`lexer.DEFAULT`](), [`lexer.WHITESPACE`](), [`lexer.COMMENT`](),
+-- [`lexer.STRING`](), [`lexer.NUMBER`](), [`lexer.KEYWORD`](),
+-- [`lexer.IDENTIFIER`](), [`lexer.OPERATOR`](), [`lexer.ERROR`](),
+-- [`lexer.PREPROCESSOR`](), [`lexer.CONSTANT`](), [`lexer.VARIABLE`](),
+-- [`lexer.FUNCTION`](), [`lexer.CLASS`](), [`lexer.TYPE`](), [`lexer.LABEL`](),
+-- [`lexer.REGEX`](), and [`lexer.EMBEDDED`](). Patterns include
+-- [`lexer.any`](), [`lexer.ascii`](), [`lexer.extend`](), [`lexer.alpha`](),
+-- [`lexer.digit`](), [`lexer.alnum`](), [`lexer.lower`](), [`lexer.upper`](),
+-- [`lexer.xdigit`](), [`lexer.cntrl`](), [`lexer.graph`](), [`lexer.print`](),
+-- [`lexer.punct`](), [`lexer.space`](), [`lexer.newline`](),
+-- [`lexer.nonnewline`](), [`lexer.nonnewline_esc`](), [`lexer.dec_num`](),
+-- [`lexer.hex_num`](), [`lexer.oct_num`](), [`lexer.integer`](),
+-- [`lexer.float`](), and [`lexer.word`](). You may use your own token names if
 -- none of the above fit your language, but an advantage to using predefined
 -- token names is that your lexer's tokens will inherit the universal syntax
 -- highlighting color theme used by your text editor.
@@ -189,8 +188,8 @@ local M = {}
 -- However, most programming languages allow escape sequences in strings such
 -- that a sequence like "\\&quot;" in a double-quoted string indicates that the
 -- '&quot;' is not the end of the string. The above token incorrectly matches
--- such a string. Instead, use the [`delimited_range()`](#delimited_range)
--- convenience function.
+-- such a string. Instead, use the [`lexer.delimited_range()`]() convenience
+-- function.
 --
 --     local dq_str = l.delimited_range('"')
 --     local sq_str = l.delimited_range("'")
@@ -202,8 +201,8 @@ local M = {}
 -- **Keywords**
 --
 -- Instead of matching _n_ keywords with _n_ `P('keyword_`_`n`_`')` ordered
--- choices, use another convenience function: [`word_match()`](#word_match). It
--- is much easier and more efficient to write word matches like:
+-- choices, use another convenience function: [`lexer.word_match()`](). It is
+-- much easier and more efficient to write word matches like:
 --
 --     local keyword = token(l.KEYWORD, l.word_match{
 --       'keyword_1', 'keyword_2', ..., 'keyword_n'
@@ -289,7 +288,7 @@ local M = {}
 --     }
 --
 -- This identifies and highlights any character not matched by an existing
--- rule as an `ERROR` token.
+-- rule as an `lexer.ERROR` token.
 --
 -- Even though the rules defined in the examples above contain a single token,
 -- rules may consist of multiple tokens. For example, a rule for an HTML tag
@@ -320,21 +319,19 @@ local M = {}
 -- font attributes, and foreground and background colors, just to name a few.
 -- The unit of this rich highlighting is called a "style". Styles are simply
 -- strings of comma-separated property settings. By default, lexers associate
--- predefined token names like `WHITESPACE`, `COMMENT`, `STRING`, etc. with
--- particular styles as part of a universal color theme. These predefined styles
--- include [`STYLE_CLASS`](#STYLE_CLASS), [`STYLE_COMMENT`](#STYLE_COMMENT),
--- [`STYLE_CONSTANT`](#STYLE_CONSTANT), [`STYLE_ERROR`](#STYLE_ERROR),
--- [`STYLE_EMBEDDED`](#STYLE_EMBEDDED), [`STYLE_FUNCTION`](#STYLE_FUNCTION),
--- [`STYLE_IDENTIFIER`](#STYLE_IDENTIFIER), [`STYLE_KEYWORD`](#STYLE_KEYWORD),
--- [`STYLE_LABEL`](#STYLE_LABEL), [`STYLE_NUMBER`](#STYLE_NUMBER),
--- [`STYLE_OPERATOR`](#STYLE_OPERATOR),
--- [`STYLE_PREPROCESSOR`](#STYLE_PREPROCESSOR), [`STYLE_REGEX`](#STYLE_REGEX),
--- [`STYLE_STRING`](#STYLE_STRING), [`STYLE_TYPE`](#STYLE_TYPE),
--- [`STYLE_VARIABLE`](#STYLE_VARIABLE), and
--- [`STYLE_WHITESPACE`](#STYLE_WHITESPACE). Like with predefined token names
--- and LPeg patterns, you may define your own styles. At their core, styles are
--- just strings, so you may create new ones and/or modify existing ones. Each
--- style consists of the following comma-separated settings:
+-- predefined token names like `lexer.WHITESPACE`, `lexer.COMMENT`,
+-- `lexer.STRING`, etc. with particular styles as part of a universal color
+-- theme. These predefined styles include [`lexer.STYLE_CLASS`](),
+-- [`lexer.STYLE_COMMENT`](), [`lexer.STYLE_CONSTANT`](),
+-- [`lexer.STYLE_ERROR`](), [`lexer.STYLE_EMBEDDED`](),
+-- [`lexer.STYLE_FUNCTION`](), [`lexer.STYLE_IDENTIFIER`](),
+-- [`lexer.STYLE_KEYWORD`](), [`lexer.STYLE_LABEL`](), [`lexer.STYLE_NUMBER`](),
+-- [`lexer.STYLE_OPERATOR`](), [`lexer.STYLE_PREPROCESSOR`](),
+-- [`lexer.STYLE_REGEX`](), [`lexer.STYLE_STRING`](), [`lexer.STYLE_TYPE`](),
+-- [`lexer.STYLE_VARIABLE`](), and [`lexer.STYLE_WHITESPACE`](). Like with
+-- predefined token names and LPeg patterns, you may define your own styles. At
+-- their core, styles are just strings, so you may create new ones and/or modify
+-- existing ones. Each style consists of the following comma-separated settings:
 --
 -- Setting        | Description
 -- ---------------|------------
@@ -360,7 +357,7 @@ local M = {}
 -- colors in a style because that color may be theme-specific. Instead, the best
 -- practice is to either use predefined styles or derive new color-agnostic
 -- styles from predefined ones. For example, Lua "longstring" tokens use the
--- existing `STYLE_STRING` style instead of defining a new one.
+-- existing `lexer.STYLE_STRING` style instead of defining a new one.
 --
 -- #### Example Styles
 --
@@ -381,7 +378,7 @@ local M = {}
 -- This allows you to derive new styles from predefined ones without having to
 -- rewrite them. This operation leaves the old style unchanged. Thus if you
 -- had a "static variable" token whose style you wanted to base off of
--- `STYLE_VARIABLE`, it would probably look like:
+-- `lexer.STYLE_VARIABLE`, it would probably look like:
 --
 --     local style_static_var = l.STYLE_VARIABLE..',italics'
 --
@@ -401,10 +398,10 @@ local M = {}
 --
 --     }
 --
--- Why is a style not assigned to the `WHITESPACE` token? As mentioned earlier,
--- lexers automatically associate tokens that use predefined token names with a
--- particular style. Only tokens with custom token names need manual style
--- associations. As an example, consider a custom whitespace token:
+-- Why is a style not assigned to the `lexer.WHITESPACE` token? As mentioned
+-- earlier, lexers automatically associate tokens that use predefined token
+-- names with a particular style. Only tokens with custom token names need
+-- manual style associations. As an example, consider a custom whitespace token:
 --
 --     local ws = token('custom_whitespace', l.space^1)
 --
@@ -462,7 +459,7 @@ local M = {}
 -- #### Parent Lexer
 --
 -- Before embedding a child lexer into a parent lexer, the parent lexer needs to
--- load the child lexer. This is done with the [`load()`](#load) function. For
+-- load the child lexer. This is done with the [`lexer.load()`]() function. For
 -- example, loading the CSS lexer within the HTML lexer looks like:
 --
 --     local css = l.load('css')
@@ -498,7 +495,7 @@ local M = {}
 --     local css_end_rule = #P('</style>') * tag
 --
 -- Once the parent loads the child lexer and defines the child's start and end
--- rules, it embeds the child with the [`embed_lexer()`](#embed_lexer) function:
+-- rules, it embeds the child with the [`lexer.embed_lexer()`]() function:
 --
 --     l.embed_lexer(M, css, css_start_rule, css_end_rule)
 --
@@ -510,10 +507,10 @@ local M = {}
 --
 -- The process for instructing a child lexer to embed itself into a parent is
 -- very similar to embedding a child into a parent: first, load the parent lexer
--- into the child lexer with the [`load()`](#load) function and then create
+-- into the child lexer with the [`lexer.load()`]() function and then create
 -- start and end rules for the child lexer. However, in this case, swap the
--- lexer object arguments to [`embed_lexer()`](#embed_lexer). For example, in
--- the PHP lexer:
+-- lexer object arguments to [`lexer.embed_lexer()`](). For example, in the PHP
+-- lexer:
 --
 --     local html = l.load('html')
 --     local php_start_rule = token('php_tag', '<?php ')
@@ -546,22 +543,22 @@ local M = {}
 --     }
 --
 -- The first assignment states that any '{' or '}' that the lexer recognized as
--- an `OPERATOR` token is a fold point. The integer `1` indicates the match is
--- a beginning fold point and `-1` indicates the match is an ending fold point.
--- Likewise, the second assignment states that any "/\*" or "\*/" that the lexer
--- recognizes as part of a `COMMENT` token is a fold point. The lexer does not
--- consider any occurences of these characters outside their defined tokens
--- (such as in a string) as fold points. Finally, every `_foldsymbols` table
--- must have a `_patterns` field that contains a list of [Lua patterns][] that
--- match fold points. If the lexer encounters text that matches one of those
--- patterns, the lexer looks up the matched text in its token's table to
--- determine whether or not the text is a fold point. In the example above, the
--- first Lua pattern matches any '{' or '}' characters. When the lexer comes
--- across one of those characters, it checks if the match is an `OPERATOR`
--- token. If so, the lexer identifies the match as a fold point. The same idea
--- applies for the other patterns. (The '%' is in the other patterns because
--- '\*' is a special character in Lua patterns that needs escaping.) How do you
--- specify fold keywords? Here is an example for Lua:
+-- an `lexer.OPERATOR` token is a fold point. The integer `1` indicates the
+-- match is a beginning fold point and `-1` indicates the match is an ending
+-- fold point. Likewise, the second assignment states that any "/\*" or "\*/"
+-- that the lexer recognizes as part of a `lexer.COMMENT` token is a fold point.
+-- The lexer does not consider any occurences of these characters outside their
+-- defined tokens (such as in a string) as fold points. Finally, every
+-- `_foldsymbols` table must have a `_patterns` field that contains a list of
+-- [Lua patterns][] that match fold points. If the lexer encounters text that
+-- matches one of those patterns, the lexer looks up the matched text in its
+-- token's table to determine whether or not the text is a fold point. In the
+-- example above, the first Lua pattern matches any '{' or '}' characters. When
+-- the lexer comes across one of those characters, it checks if the match is an
+-- `lexer.OPERATOR` token. If so, the lexer identifies the match as a fold
+-- point. The same idea applies for the other patterns. (The '%' is in the other
+-- patterns because '\*' is a special character in Lua patterns that needs
+-- escaping.) How do you specify fold keywords? Here is an example for Lua:
 --
 --     M._foldsymbols = {
 --       [l.KEYWORD] = {
@@ -571,9 +568,9 @@ local M = {}
 --       _patterns = {'%l+'}
 --     }
 --
--- Any time the lexer encounters a lower case word, if that word is a `KEYWORD`
--- token and in the associated list of fold points, the lexer identifies the
--- word as a fold point.
+-- Any time the lexer encounters a lower case word, if that word is a
+-- `lexer.KEYWORD` token and in the associated list of fold points, the lexer
+-- identifies the word as a fold point.
 --
 -- If your lexer needs to do some additional processing to determine if a match
 -- is a fold point, assign a function that returns an integer. Returning `1` or
@@ -763,7 +760,7 @@ local M = {}
 -- @field STYLE_INDENTGUIDE (string)
 --   The style used for indentation guides.
 -- @field STYLE_CALLTIP (string)
---   The style used by call tips if `buffer.call_tip_use_style` is set.
+--   The style used by call tips if [`buffer.call_tip_use_style`]() is set.
 --   Only the font name, size, and color attributes are used.
 -- @field any (pattern)
 --   A pattern that matches any single character.
@@ -846,11 +843,12 @@ local M = {}
 --   found.
 -- @field style_at (table, Read-only)
 --   Table of style names at positions in the buffer starting from zero.
-module('lexers.lexer')]=]
+module('lexer')]=]
 
 local lpeg = require('lpeg')
 local lpeg_P, lpeg_R, lpeg_S, lpeg_V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
 local lpeg_Ct, lpeg_Cc, lpeg_Cp = lpeg.Ct, lpeg.Cc, lpeg.Cp
+local lpeg_Cmt, lpeg_C = lpeg.Cmt, lpeg.C
 local lpeg_match = lpeg.match
 
 M.LEXERPATH = package.path
@@ -994,7 +992,7 @@ function M.load(name, alt_name)
   parent_lexer = nil -- reset
 
   -- When using Scintillua as a stand-alone module, the `property` and
-  -- `propery_int` tables do not exist (they are not useful). Create them to
+  -- `property_int` tables do not exist (they are not useful). Create them to
   -- prevent errors from occurring.
   if not M.property then
     M.property, M.property_int = {}, setmetatable({}, {
@@ -1007,7 +1005,7 @@ function M.load(name, alt_name)
 
   -- Load the language lexer with its rules, styles, etc.
   M.WHITESPACE = (alt_name or name)..'_whitespace'
-  local lexer_file, error = package.searchpath('lexers.' .. name, M.LEXERPATH)
+  local lexer_file, error = package.searchpath(name, M.LEXERPATH)
   local ok, lexer = pcall(dofile, lexer_file or '')
   if not ok then
     _G.print(error or lexer) -- error message
@@ -1171,32 +1169,29 @@ function M.fold(lexer, text, start_pos, start_line, start_level)
   elseif fold and M.property_int['fold.by.indentation'] > 0 then
     local indent_amount = M.indent_amount
     -- Indentation based folding.
-    local current_line, prev_level = start_line, start_level
-    for _, line in text:gmatch('([\t ]*)(.-)\r?\n') do
-      if line ~= '' then
-        local current_level = FOLD_BASE + indent_amount[current_line]
-        if current_level > prev_level then -- next level
-          local i = current_line - 1
-          while folds[i] and folds[i][2] == FOLD_BLANK do i = i - 1 end
-          if folds[i] then folds[i][2] = FOLD_HEADER end -- low indent
-          folds[current_line] = {current_level} -- high indent
-        elseif current_level < prev_level then -- prev level
-          if folds[current_line - 1] then
-            folds[current_line - 1][1] = prev_level -- high indent
+    local indentation = {}
+    for indent, line in (text..'\n'):gmatch('([\t ]*)([^\r\n]*)\r?\n') do
+      indentation[#indentation + 1] = line ~= '' and #indent
+    end
+    local line_num, prev_level = start_line, FOLD_BASE + (indentation[1] or 0)
+    local current_level = prev_level
+    for i = 1, #indentation do
+      if indentation[i] then
+        for j = i + 1, #indentation do
+          if indentation[j] then
+            current_level = FOLD_BASE + indentation[j]
+            break
           end
-          folds[current_line] = {current_level} -- low indent
-        else -- same level
-          folds[current_line] = {prev_level}
+        end
+        folds[line_num] = prev_level
+        if current_level > prev_level then
+          folds[line_num] = prev_level + FOLD_HEADER
         end
         prev_level = current_level
       else
-        folds[current_line] = {prev_level, FOLD_BLANK}
+        folds[line_num] = prev_level + FOLD_BLANK
       end
-      current_line = current_line + 1
-    end
-    -- Flatten.
-    for line, level in pairs(folds) do
-      folds[line] = level[1] + (level[2] or 0)
+      line_num = line_num + 1
     end
   else
     -- No folding, reset fold levels if necessary.
@@ -1307,15 +1302,16 @@ end
 -- beginning of a line.
 -- @param patt The LPeg pattern to match on the beginning of a line.
 -- @return pattern
--- @usage local preproc = token(l.PREPROCESSOR, #P('#') * l.starts_line('#' *
---   l.nonnewline^0))
+-- @usage local preproc = token(l.PREPROCESSOR, l.starts_line('#') *
+--   l.nonnewline^0)
 -- @name starts_line
 function M.starts_line(patt)
-  return lpeg_P(function(input, index)
-    if index == 1 then return index end
-    local char = input:sub(index - 1, index - 1)
-    if char == '\n' or char == '\r' or char == '\f' then return index end
-  end) * patt
+  return lpeg_Cmt(lpeg_C(patt), function(input, index, match, ...)
+    local pos = index - #match
+    if pos == 1 then return index, ... end
+    local char = input:sub(pos - 1, pos - 1)
+    if char == '\n' or char == '\r' or char == '\f' then return index, ... end
+  end)
 end
 
 ---
@@ -1376,17 +1372,12 @@ function M.word_match(words, word_chars, case_insensitive)
   for _, word in ipairs(words) do
     word_list[case_insensitive and word:lower() or word] = true
   end
-  local chars = '%w_'
-  -- escape 'magic' characters
-  -- TODO: append chars to the end so ^_ can be passed for not including '_'s
-  if word_chars then chars = chars..word_chars:gsub('([%^%]%-])', '%%%1') end
-  return lpeg_P(function(input, index)
-      local s, e, word = input:find('^(['..chars..']+)', index)
-      if word then
-        if case_insensitive then word = word:lower() end
-        return word_list[word] and e + 1 or nil
-      end
-    end)
+  local chars = M.alnum + '_'
+  if word_chars then chars = chars + lpeg_S(word_chars) end
+  return lpeg_Cmt(chars^1, function(input, index, word)
+    if case_insensitive then word = word:lower() end
+    return word_list[word] and index or nil
+  end)
 end
 
 ---
@@ -1502,7 +1493,7 @@ M.property_expanded = setmetatable({}, {
 --[[ The functions and fields below were defined in C.
 
 ---
--- Individual lexer fields.
+-- Individual fields for a lexer instance.
 -- @field _NAME The string name of the lexer.
 -- @field _rules An ordered list of rules for a lexer grammar.
 --   Each rule is a table containing an arbitrary rule name and the LPeg pattern
