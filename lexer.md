@@ -1,10 +1,13 @@
 ---
 project: lexer
-tagline: scintillua lexer
+tagline: scintillua lexers
 ---
 
-> __NOTE:__ What follows is an experiment in integrating documentation from external projects into luapower. \
-> Check out the [original documentation of the lexer module][lexer doc].
+> __NOTE:__ What follows is an experiment in integrating documentation
+from external projects into luapower. Check out the
+[original documentation of the lexer module][lexer doc].
+
+[lexer doc]: http://foicica.com/scintillua/api.html#lexer
 
 ## `local lexer = require'lexer'`
 
@@ -849,6 +852,3 @@ property_int (table, Read-only)
 style_at (table, Read-only)
 :    Table of style names at positions in the buffer starting from zero.
 
-
-
-[lexer doc]: http://foicica.com/scintillua/api/lexer.html
