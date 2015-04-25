@@ -1,4 +1,4 @@
--- Copyright 2006-2014 Mitchell mitchell.att.foicica.com. See LICENSE.
+-- Copyright 2006-2015 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 local M = {}
 
@@ -346,7 +346,6 @@ local M = {}
 -- case:_char_    | The case of the font ('u': upper, 'l': lower, 'm': normal).
 -- [not]visible   | Whether or not the text is visible.
 -- [not]changeable| Whether the text is changeable or read-only.
--- [not]hotspot   | Whether or not the text is clickable.
 --
 -- Specify font colors in either "#RRGGBB" format, "0xBBGGRR" format, or the
 -- decimal equivalent of the latter. As with token names, LPeg patterns, and
@@ -600,6 +599,15 @@ local M = {}
 --
 -- [Lua patterns]: http://www.lua.org/manual/5.2/manual.html#6.4.1
 --
+-- ### Fold by Indentation
+--
+-- Some languages have significant whitespace and/or no delimiters that indicate
+-- fold points. If your lexer falls into this category and you would like to
+-- mark fold points based on changes in indentation, use the
+-- `_FOLDBYINDENTATION` field:
+--
+--     M._FOLDBYINDENTATION = true
+--
 -- ## Using Lexers
 --
 -- ### Textadept
@@ -824,7 +832,7 @@ local M = {}
 --   Fold level masks are composed of an integer level combined with any of the
 --   following bits:
 --
---   * `lexer.FOLDBASE`
+--   * `lexer.FOLD_BASE`
 --     The initial fold level.
 --   * `lexer.FOLD_BLANK`
 --     The line is blank.
@@ -1005,7 +1013,7 @@ function M.load(name, alt_name)
 
   -- Load the language lexer with its rules, styles, etc.
   M.WHITESPACE = (alt_name or name)..'_whitespace'
-  local lexer_file, error = package.searchpath('lexers.' .. name, M.LEXERPATH)
+  local lexer_file, error = package.searchpath(name, M.LEXERPATH)
   local ok, lexer = pcall(dofile, lexer_file or '')
   if not ok then
     _G.print(error or lexer) -- error message
@@ -1114,8 +1122,8 @@ end
 -- Folds *text* starting at position *start_pos* on line number *start_line*
 -- with a beginning fold level of *start_level* in the buffer. If *lexer* has a
 -- a `_fold` function or a `_foldsymbols` table, that field is used to perform
--- folding. Otherwise, if a `fold.by.indentation` property is set, folding by
--- indentation is done.
+-- folding. Otherwise, if *lexer* has a `_FOLDBYINDENTATION` field set, or if a
+-- `fold.by.indentation` property is set, folding by indentation is done.
 -- @param lexer The lexer object to fold with.
 -- @param text The text in the buffer to fold.
 -- @param start_pos The position in the buffer *text* starts at.
@@ -1136,28 +1144,46 @@ function M.fold(lexer, text, start_pos, start_line, start_level)
     for p, l in (text..'\n'):gmatch('()(.-)\r?\n') do
       lines[#lines + 1] = {p, l}
     end
+    local fold_zero_sum_lines = M.property_int['fold.on.zero.sum.lines'] > 0
     local fold_symbols = lexer._foldsymbols
     local fold_symbols_patterns = fold_symbols._patterns
-    local style_at = M.style_at
+    local style_at, fold_level = M.style_at, M.fold_level
     local line_num, prev_level = start_line, start_level
     local current_level = prev_level
     for i = 1, #lines do
       local pos, line = lines[i][1], lines[i][2]
       if line ~= '' then
+        local level_decreased = false
         for j = 1, #fold_symbols_patterns do
           for s, match in line:gmatch(fold_symbols_patterns[j]) do
             local symbols = fold_symbols[style_at[start_pos + pos + s - 1]]
             local l = symbols and symbols[match]
+            if type(l) == 'function' then l = l(text, pos, line, s, match) end
             if type(l) == 'number' then
               current_level = current_level + l
-            elseif type(l) == 'function' then
-              current_level = current_level + l(text, pos, line, s, match)
+              if l < 0 and current_level < prev_level then
+                -- Potential zero-sum line. If the level were to go back up on
+                -- the same line, the line may be marked as a fold header.
+                level_decreased = true
+              end
             end
           end
         end
         folds[line_num] = prev_level
         if current_level > prev_level then
           folds[line_num] = prev_level + FOLD_HEADER
+        elseif level_decreased and current_level == prev_level and
+               fold_zero_sum_lines then
+          if line_num > start_line then
+            folds[line_num] = prev_level - 1 + FOLD_HEADER
+          else
+            -- Typing within a zero-sum line.
+            local level = fold_level[line_num - 1] - 1
+            if level > FOLD_HEADER then level = level - FOLD_HEADER end
+            if level > FOLD_BLANK then level = level - FOLD_BLANK end
+            folds[line_num] = level + FOLD_HEADER
+            current_level = current_level + 1
+          end
         end
         if current_level < FOLD_BASE then current_level = FOLD_BASE end
         prev_level = current_level
@@ -1166,37 +1192,57 @@ function M.fold(lexer, text, start_pos, start_line, start_level)
       end
       line_num = line_num + 1
     end
-  elseif fold and M.property_int['fold.by.indentation'] > 0 then
-    local indent_amount = M.indent_amount
+  elseif fold and (lexer._FOLDBYINDENTATION or
+                   M.property_int['fold.by.indentation'] > 0) then
     -- Indentation based folding.
+    -- Calculate indentation per line.
     local indentation = {}
     for indent, line in (text..'\n'):gmatch('([\t ]*)([^\r\n]*)\r?\n') do
       indentation[#indentation + 1] = line ~= '' and #indent
     end
-    local line_num, prev_level = start_line, FOLD_BASE + (indentation[1] or 0)
-    local current_level = prev_level
+    -- Find the first non-blank line before start_line. If the current line is
+    -- indented, make that previous line a header and update the levels of any
+    -- blank lines inbetween. If the current line is blank, match the level of
+    -- the previous non-blank line.
+    local current_level = start_level
+    for i = start_line - 1, 0, -1 do
+      local level = M.fold_level[i]
+      if level >= FOLD_HEADER then level = level - FOLD_HEADER end
+      if level < FOLD_BLANK then
+        local indent = M.indent_amount[i]
+        if indentation[1] and indentation[1] > indent then
+          folds[i] = FOLD_BASE + indent + FOLD_HEADER
+          for j = i + 1, start_line - 1 do
+            folds[j] = start_level + FOLD_BLANK
+          end
+        elseif not indentation[1] then
+          current_level = FOLD_BASE + indent
+        end
+        break
+      end
+    end
+    -- Iterate over lines, setting fold numbers and fold flags.
     for i = 1, #indentation do
       if indentation[i] then
+        current_level = FOLD_BASE + indentation[i]
+        folds[start_line + i - 1] = current_level
         for j = i + 1, #indentation do
           if indentation[j] then
-            current_level = FOLD_BASE + indentation[j]
+            if FOLD_BASE + indentation[j] > current_level then
+              folds[start_line + i - 1] = current_level + FOLD_HEADER
+              current_level = FOLD_BASE + indentation[j] -- for any blanks below
+            end
             break
           end
         end
-        folds[line_num] = prev_level
-        if current_level > prev_level then
-          folds[line_num] = prev_level + FOLD_HEADER
-        end
-        prev_level = current_level
       else
-        folds[line_num] = prev_level + FOLD_BLANK
+        folds[start_line + i - 1] = current_level + FOLD_BLANK
       end
-      line_num = line_num + 1
     end
   else
     -- No folding, reset fold levels if necessary.
     local current_line = start_line
-    for _ in text:gmatch(".-\r?\n") do
+    for _ in text:gmatch('\r?\n') do
       folds[current_line] = start_level
       current_line = current_line + 1
     end
@@ -1531,6 +1577,8 @@ M.property_expanded = setmetatable({}, {
 --    (instead of an arbitrary chunk of text) at a time.
 --    The default value is `false`. Line lexers cannot look ahead to subsequent
 --    lines.
+-- @field _FOLDBYINDENTATION Declares the lexer does not define fold points and
+--    that fold points should be calculated based on changes in indentation.
 -- @class table
 -- @name lexer
 local lexer
