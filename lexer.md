@@ -1,5 +1,4 @@
 ---
-project: lexer
 tagline: scintillua lexers
 ---
 
